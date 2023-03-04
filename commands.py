@@ -1,4 +1,32 @@
-@dp.message_handler(commands=['start'])
+from aiogram import types
+from other_functions import *
+from config import *
+import requests
+import os, shutil
+from glob import glob
+from geopy.geocoders import Nominatim
+import random
+import re
+from aiogram.types import BotCommand
+bot = Bot(token=API_TOKEN)
+dp = Dispatcher(bot)
+
+commands = [types.BotCommand(command="/start", description="Начать диалог"),
+            types.BotCommand(command="/help", description="Показать справку"),
+            types.BotCommand(command="/weather", description="Погода в Жабинке"),
+            types.BotCommand(command="/currency", description="Курсы валют"),
+            types.BotCommand(command="/summer", description="Дни до лета"),
+            types.BotCommand(command="/image", description="Три рандомные фото"),
+            types.BotCommand(command="/joke", description="Шутка"),]
+async def set_commands(bot: Bot):
+    await bot.set_my_commands(commands)
+with open('words.txt', 'r', encoding='utf-8') as file:
+    bad_words = [word.strip().lower() for word in file if word.strip()]
+
+pattern = '|'.join(bad_words)
+# Создайте регулярное выражение для поиска матерных слов
+bad_words_pattern = re.compile(pattern, re.IGNORECASE)
+
 async def start_command_handler(message: types.Message):
     await anti_flood(message)
     await message.answer('здарова петушары!')
@@ -6,7 +34,7 @@ async def start_command_handler(message: types.Message):
     ids = await get_chat_user_ids(api_id, api_hash, phone_number, message.chat.id)
     print(ids)
 
-@dp.message_handler(commands=['mute', 'unmute'])
+
 async def mute_command_handler(message: types.Message):
      await anti_flood(message)
      isadmin = await bot.get_chat_member(message.chat.id, message.from_user.id)
@@ -28,8 +56,10 @@ async def mute_command_handler(message: types.Message):
              permissions = ChatPermissions(can_send_messages=False)
              await bot.restrict_chat_member(message.chat.id, user_id, permissions, until_date=mute_time)
              await message.delete()
+     else:
+        await message.delete()
+        await message.answer("нет прав доступа")
 
-@dp.message_handler(commands=['joke'])
 async def joke_command_handler(message: types.Message):
     await anti_flood(message)
     await bot.send_message(message.from_user.id,"Хоть я и несуществовал, но мать твою в очко ебал")
@@ -37,7 +67,7 @@ async def joke_command_handler(message: types.Message):
 
 
 
-@dp.message_handler(commands=['summer'])
+
 async def summer_command_handler(message: types.Message):
     await anti_flood(message)
     today = datetime.date.today().year
@@ -56,7 +86,7 @@ async def summer_command_handler(message: types.Message):
         await bot.send_message(message.from_user.id,f"дней до лета: {time_diff.days} дней")
     await message.delete()
 
-@dp.message_handler(commands=['weather'])
+
 async def weather_command_handler(message: types.Message):
     await anti_flood(message)
     api = 'ff7241f24f05023868c977c325973182'
@@ -79,7 +109,7 @@ async def weather_command_handler(message: types.Message):
                          f"ветер: <b>{wind} м/с</b>", parse_mode='html')
     await message.delete()
 
-@dp.message_handler(commands=['image'])
+
 async def image_command_handler(message:types.Message):
     await anti_flood(message)
     block_time = 0
@@ -103,18 +133,17 @@ async def image_command_handler(message:types.Message):
             await bot.send_photo(message.chat.id,photo)
     # block_time = datetime.datetime.now() + datetime.time.hour(3)
 
-@dp.message_handler(commands=['help'])
+
 async def help_command_handler(message:types.Message):
     await anti_flood(message)
     await bot.send_message(message.from_user.id,'этот бот следит за ссаниной происходящей в этом легендарном чате')
     await message.delete()
 
-@dp.message_handler(commands=['currency'])
+
 async def currency_command_handler(message:types.Message):
     await anti_flood(message)
     r = requests.get('https://belarusbank.by/api/kursExchange?city=Жабинка')
     data = r.json()
-    pprint(data)
     usd_in = data[0]['USD_in']
     usd_out = data[0]['USD_out']
     eur_in = data[0]['EUR_in']
@@ -140,12 +169,12 @@ async def currency_command_handler(message:types.Message):
                       f"     продажа: <b>{pln_out}\n</b>\n", parse_mode='html')
     #
 
-@dp.message_handler(content_types=[types.ContentType.NEW_CHAT_MEMBERS,types.ContentType.LEFT_CHAT_MEMBER])
+
 async def delete_join_messages(message: types.Message):
     await bot.delete_message(chat_id=message.chat.id, message_id=message.message_id)
 
 
-@dp.message_handler()
+
 async def filter_messages(message: types.Message):
     # Проверьте, содержит ли сообщение матерные слова
     await anti_flood(message)
