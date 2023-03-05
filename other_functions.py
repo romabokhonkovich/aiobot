@@ -8,7 +8,7 @@ bot = Bot(token=API_TOKEN)
 dp = Dispatcher(bot)
 async def anti_flood(message: types.Message):
     chat_member = await bot.get_chat_member(chat_id=message.chat.id, user_id=message.from_user.id)
-    if chat_member.is_chat_owner():
+    if not chat_member.is_chat_owner():
         return
     user_id = message.from_user.id
     chat_id = message.chat.id
