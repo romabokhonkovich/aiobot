@@ -1,10 +1,15 @@
-from aiogram import types
+from aiogram import types, Bot, Dispatcher
 import datetime
 from telethon.sync import TelegramClient
-from aiogram import Bot, Dispatcher, types
-from aiogram.types import ChatPermissions, ChatMemberUpdated, ChatActions
+from aiogram.types import ChatPermissions, ChatMemberUpdated, ChatActions, ChatMember
+from config import *
 users_dict = {}
+bot = Bot(token=API_TOKEN)
+dp = Dispatcher(bot)
 async def anti_flood(message: types.Message):
+    chat_member = await bot.get_chat_member(chat_id=message.chat.id, user_id=message.from_user.id)
+    if not chat_member.is_chat_owner():
+        return
     user_id = message.from_user.id
     chat_id = message.chat.id
     current_time = datetime.datetime.now()

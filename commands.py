@@ -1,4 +1,4 @@
-from aiogram import types
+from aiogram import types, Bot, Dispatcher, executor
 from other_functions import *
 from config import *
 import requests
@@ -11,21 +11,15 @@ from aiogram.types import BotCommand
 bot = Bot(token=API_TOKEN)
 dp = Dispatcher(bot)
 
-commands = [types.BotCommand(command="/start", description="Начать диалог"),
-            types.BotCommand(command="/help", description="Показать справку"),
-            types.BotCommand(command="/weather", description="Погода в Жабинке"),
-            types.BotCommand(command="/currency", description="Курсы валют"),
-            types.BotCommand(command="/summer", description="Дни до лета"),
-            types.BotCommand(command="/image", description="Три рандомные фото"),
-            types.BotCommand(command="/joke", description="Шутка"),]
-async def set_commands(bot: Bot):
-    await bot.set_my_commands(commands)
+
 with open('words.txt', 'r', encoding='utf-8') as file:
     bad_words = [word.strip().lower() for word in file if word.strip()]
 
 pattern = '|'.join(bad_words)
 # Создайте регулярное выражение для поиска матерных слов
 bad_words_pattern = re.compile(pattern, re.IGNORECASE)
+
+
 
 async def start_command_handler(message: types.Message):
     await anti_flood(message)
@@ -111,9 +105,13 @@ async def weather_command_handler(message: types.Message):
 
 
 async def image_command_handler(message:types.Message):
-    await anti_flood(message)
-    block_time = 0
-    # if block_time >= datetime.datetime.today().:
+    users_ids = []
+    user_id = message.from_user.id
+    if datetime.time(hour= 00, minute= 00, second= 00):
+        users_ids.clear()
+    if user_id in user_ids:
+        message.delete()
+        return
     chat = message.chat.id
     all_files = []
     path = "c:/Users/bokho/Downloads/Мессенджер"
@@ -131,8 +129,9 @@ async def image_command_handler(message:types.Message):
         with open(photo_path, 'rb') as f:
             photo = f.read()
             await bot.send_photo(message.chat.id,photo)
-    # block_time = datetime.datetime.now() + datetime.time.hour(3)
+        os.remove(photo_path)
 
+    users_ids.append(user_id)
 
 async def help_command_handler(message:types.Message):
     await anti_flood(message)
@@ -176,7 +175,9 @@ async def delete_join_messages(message: types.Message):
 
 
 async def filter_messages(message: types.Message):
-    # Проверьте, содержит ли сообщение матерные слова
+    chat_member = await bot.get_chat_member(chat_id=message.chat.id, user_id=message.from_user.id)
+    if not chat_member.is_chat_owner():
+        return
     await anti_flood(message)
     text = message.text.islower()
     # Проверяем, что пользователь не отправлял сообщение в последнюю минуту
@@ -191,3 +192,5 @@ async def filter_messages(message: types.Message):
         mute_time = datetime.datetime.now() + datetime.timedelta(seconds = 60)
         permissions = ChatPermissions(can_send_messages=False)
         await bot.restrict_chat_member(chat_id, user_id, permissions, until_date=mute_time)
+
+
